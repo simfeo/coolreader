@@ -315,17 +315,18 @@ public class BookmarksDlg  extends BaseDialog {
 		Bookmark bm = mList.getSelectedBookmark();
 		if ( mList.isShortcutMode() ) {
 			if ( shortcut>=0 && shortcut<SHORTCUT_COUNT ) {
-				switch (item.getItemId()) {
-				case R.id.bookmark_shortcut_add:
+				// Resource ids are not compile-time constants under AGP 9, so no switch here.
+				final int id = item.getItemId();
+				if (id == R.id.bookmark_shortcut_add) {
 					mReaderView.addBookmark(shortcut+1);
 					listUpdated();
 					dismiss();
 					return true;
-				case R.id.bookmark_delete:
+				} else if (id == R.id.bookmark_delete) {
 					if (mReaderView.removeBookmark(bm) != null)
 						listUpdated();
 					return true;
-				case R.id.bookmark_shortcut_goto:
+				} else if (id == R.id.bookmark_shortcut_goto) {
 					mReaderView.goToBookmark(shortcut+1);
 					dismiss();
 					return true;
@@ -333,29 +334,29 @@ public class BookmarksDlg  extends BaseDialog {
 			}
 			return super.onContextItemSelected(item);
 		}
-		switch (item.getItemId()) {
-		case R.id.bookmark_add:
+		final int id = item.getItemId();
+		if (id == R.id.bookmark_add) {
 			mReaderView.addBookmark(0);
 			listUpdated();
 			dismiss();
 			return true;
-		case R.id.bookmark_delete:
+		} else if (id == R.id.bookmark_delete) {
 			if (mReaderView.removeBookmark(bm) != null)
 				listUpdated();
 			return true;
-		case R.id.bookmark_goto:
+		} else if (id == R.id.bookmark_goto) {
 			if ( bm!=null )
 				mReaderView.goToBookmark(bm);
 			dismiss();
 			return true;
-		case R.id.bookmark_edit:
+		} else if (id == R.id.bookmark_edit) {
 			if ( bm!=null && (bm.getType()==Bookmark.TYPE_COMMENT || bm.getType()==Bookmark.TYPE_CORRECTION)) {
 				BookmarkEditDialog dlg = new BookmarkEditDialog(mCoolReader, mReaderView, bm, false);
 				dlg.show();
 			}
 			dismiss();
 			return true;
-		case R.id.bookmark_export:
+		} else if (id == R.id.bookmark_export) {
 			if ( mBookInfo.getBookmarkCount()>0 ) {
 				FileInfo fi = mBookInfo.getFileInfo();
 				String s = fi.getPathName();
@@ -368,7 +369,7 @@ public class BookmarksDlg  extends BaseDialog {
 			}
 			dismiss();
 			return true;
-		case R.id.bookmark_send:
+		} else if (id == R.id.bookmark_send) {
 			if ( mBookInfo.getBookmarkCount()>0 ) {
 				String s = mBookInfo.getBookmarksExportText();
 				mCoolReader.sendBookFragment(mBookInfo, s);

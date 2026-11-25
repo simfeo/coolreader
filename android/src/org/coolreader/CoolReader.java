@@ -40,6 +40,7 @@ import android.os.BatteryManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Debug;
+import android.os.Environment;
 import android.view.LayoutInflater;
 import android.view.Surface;
 import android.view.View;
@@ -953,6 +954,17 @@ public class CoolReader extends BaseActivity {
 		super.onResume();
 		//Properties props = SettingsManager.instance(this).get();
 
+		// onResume also fires right after startActivity(), before Settings covers us,
+		// so keep the flag until the grant is actually observed.
+		if (mAllFilesAccessRequested && Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+			if (Environment.isExternalStorageManager()) {
+				mAllFilesAccessRequested = false;
+				log.i("All files access GRANTED, rescanning storage...");
+				onStorageAccessGranted();
+				updateExtDataDirCreateTime();
+			}
+		}
+
 		if (mReaderView != null)
 			mReaderView.onAppResume();
 		// ACTION_BATTERY_CHANGED: This is a sticky broadcast containing the charging state, level, and other information about the battery.
@@ -1095,8 +1107,25 @@ public class CoolReader extends BaseActivity {
 		log.i("CoolReader.onStop() exiting");
 	}
 
+	// Set while the user is in the system "All files access" screen; checked in onResume.
+	private boolean mAllFilesAccessRequested = false;
+
 	private void requestStoragePermissions() {
-		// check or request permission for storage
+		// Since Android 11 with targetSdk >= 30, READ_EXTERNAL_STORAGE only exposes media files,
+		// so books (.epub, .fb2, ...) stay invisible without the "All files access" grant.
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+			if (!Environment.isExternalStorageManager()) {
+				log.i("All files access not granted, opening system settings");
+				mAllFilesAccessRequested = true;
+				try {
+					startActivity(new Intent(android.provider.Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION,
+							Uri.parse("package:" + getPackageName())));
+				} catch (Exception e) {
+					startActivity(new Intent(android.provider.Settings.ACTION_MANAGE_ALL_FILES_ACCESS_PERMISSION));
+				}
+			}
+			return;
+		}
 		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
 			int readExtStoragePermissionCheck = checkSelfPermission(Manifest.permission.READ_EXTERNAL_STORAGE);
 			int writeExtStoragePermissionCheck = checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE);
@@ -1142,6 +1171,26 @@ public class CoolReader extends BaseActivity {
 		}
 	}
 
+	private void onStorageAccessGranted() {
+		Services.refreshServices(this);
+		rebaseSettings();
+		waitForCRDBService(() -> {
+			getDBService().setPathCorrector(Engine.getInstance(CoolReader.this).getPathCorrector());
+			getDB().reopenDatabase();
+			Services.getHistory().loadFromDB(getDB(), 200);
+		});
+		if (mHomeFrame != null)
+			mHomeFrame.refreshView();
+	}
+
+	private void updateExtDataDirCreateTime() {
+		if (Engine.getExternalSettingsDirName() != null) {
+			setExtDataDirCreateTime(new Date());
+		} else {
+			setExtDataDirCreateTime(null);
+		}
+	}
+
 	public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
 		log.i("CoolReader.onRequestPermissionsResult()");
 		if (REQUEST_CODE_STORAGE_PERM == requestCode) {        // external storage read & write permissions
@@ -1159,20 +1208,9 @@ public class CoolReader extends BaseActivity {
 			}
 			if (2 == ext_sd_perm_count) {
 				log.i("read&write to storage permissions GRANTED, adding sd card mount point...");
-				Services.refreshServices(this);
-				rebaseSettings();
-				waitForCRDBService(() -> {
-					getDBService().setPathCorrector(Engine.getInstance(CoolReader.this).getPathCorrector());
-					getDB().reopenDatabase();
-					Services.getHistory().loadFromDB(getDB(), 200);
-				});
-				mHomeFrame.refreshView();
+				onStorageAccessGranted();
 			}
-			if (Engine.getExternalSettingsDirName() != null) {
-				setExtDataDirCreateTime(new Date());
-			} else {
-				setExtDataDirCreateTime(null);
-			}
+			updateExtDataDirCreateTime();
 		} else if (REQUEST_CODE_READ_PHONE_STATE_PERM == requestCode) {
 			if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
 				log.i("read phone state permission is GRANTED, registering phone activity handler...");
@@ -1425,6 +1463,7 @@ public class CoolReader extends BaseActivity {
 
 				mBrowserToolBar = new CRToolBar(CoolReader.this, ReaderAction.createList(
 						ReaderAction.FILE_BROWSER_UP,
+						ReaderAction.FILE_BROWSER_SORT_ORDER,
 						ReaderAction.CURRENT_BOOK,
 						ReaderAction.OPTIONS,
 						ReaderAction.FILE_BROWSER_ROOT,
@@ -1433,7 +1472,6 @@ public class CoolReader extends BaseActivity {
 						ReaderAction.OPDS_CATALOGS,
 						ReaderAction.SEARCH,
 						ReaderAction.SCAN_DIRECTORY_RECURSIVE,
-						ReaderAction.FILE_BROWSER_SORT_ORDER,
 						ReaderAction.SAVE_LOGCAT,
 						ReaderAction.EXIT
 				), false);

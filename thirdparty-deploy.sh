@@ -81,7 +81,7 @@ deploy_package()
 		then
 			echo "The existing source package is older."
 			echo -n "Cleaning it... "
-			rm -r "${thirdparty_dir}/${SOURCESDIR}" >/dev/null 2>&1 || die "rm (dir) failed!"
+			rm -rf "${thirdparty_dir}/${SOURCESDIR}" || die "rm (dir) failed!"
 			echo "done"
 		fi
 	fi

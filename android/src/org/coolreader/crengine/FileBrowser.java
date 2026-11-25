@@ -303,73 +303,50 @@ public class FileBrowser extends LinearLayout implements FileInfoChangeListener 
 		if ( selectedItem==null )
 			return false;
 			
-		switch (item.getItemId()) {
-		case R.id.book_open:
-			log.d("book_open menu item selected");
+		// Resource ids are not compile-time constants under AGP 9, so no switch here.
+		final int id = item.getItemId();
+		if (id == R.id.book_open) {
 			if ( selectedItem.isOPDSDir() )
 				showOPDSDir(selectedItem, null);
 			else
 				mActivity.loadDocument(selectedItem, true);
-			return true;
-		case R.id.book_sort_order:
-			mActivity.showToast("Sorry, sort order selection is not yet implemented");
-			return true;
-		case R.id.book_recent_books:
+		} else if (id == R.id.book_sort_order) {
+			showSortOrderMenu();
+		} else if (id == R.id.book_recent_books) {
 			showRecentBooks();
-			return true;
-		case R.id.book_opds_root:
+		} else if (id == R.id.book_opds_root) {
 			showOPDSRootDirectory();
-			return true;
-		case R.id.book_root:
+		} else if (id == R.id.book_root) {
 			showRootDirectory();
-			return true;
-		case R.id.book_back_to_reading:
+		} else if (id == R.id.book_back_to_reading) {
 			if (mActivity.isBookOpened())
 				mActivity.showReader();
 			else
 				mActivity.showToast("No book opened");
-			return true;
-		case R.id.book_delete:
-			log.d("book_delete menu item selected");
+		} else if (id == R.id.book_delete) {
 			mActivity.askDeleteBook(selectedItem);
-			return true;
-		case R.id.book_recent_goto:
-			log.d("book_recent_goto menu item selected");
+		} else if (id == R.id.book_recent_goto) {
 			showDirectory(selectedItem, selectedItem);
-			return true;
-		case R.id.book_recent_remove:
-			log.d("book_recent_remove menu item selected");
+		} else if (id == R.id.book_recent_remove) {
 			mActivity.askDeleteRecent(selectedItem);
-			return true;
-		case R.id.catalog_add:
-			log.d("catalog_add menu item selected");
+		} else if (id == R.id.catalog_add) {
 			mActivity.editOPDSCatalog(null);
-			return true;
-		case R.id.catalog_delete:
-			log.d("catalog_delete menu item selected");
+		} else if (id == R.id.catalog_delete) {
 			mActivity.askDeleteCatalog(selectedItem);
-			return true;
-		case R.id.catalog_edit:
-			log.d("catalog_edit menu item selected");
+		} else if (id == R.id.catalog_edit) {
 			mActivity.editOPDSCatalog(selectedItem);
-			return true;
-		case R.id.catalog_open:
-			log.d("catalog_open menu item selected");
+		} else if (id == R.id.catalog_open) {
 			showOPDSDir(selectedItem, null);
-			return true;
-        case R.id.folder_open:
-            log.d("folder_open menu item selected");
-            showDirectory(selectedItem, null);
-            return true;
-        case R.id.folder_to_favorites:
-            log.d("folder_to_favorites menu item selected");
-            addToFavorites(selectedItem);
-            return true;
-		case R.id.folder_delete:
+		} else if (id == R.id.folder_open) {
+			showDirectory(selectedItem, null);
+		} else if (id == R.id.folder_to_favorites) {
+			addToFavorites(selectedItem);
+		} else if (id == R.id.folder_delete) {
 			mActivity.askDeleteFolder(selectedItem);
-			return true;
+		} else {
+			return false;
 		}
-		return false;
+		return true;
 	}
 
     private void addToFavorites(FileInfo folder) {
@@ -561,10 +538,11 @@ public class FileBrowser extends LinearLayout implements FileInfoChangeListener 
 		if ( mSortOrder == order )
 			return;
 		mSortOrder = order!=null ? order : FileInfo.DEF_SORT_ORDER;
+		mActivity.setSetting(ReaderView.PROP_APP_BOOK_SORT_ORDER, mSortOrder.name(), false);
 		if (currDirectory != null && currDirectory.allowSorting()) {
 			currDirectory.sort(mSortOrder);
-			showDirectory(currDirectory, selectedItem);
-			mActivity.setSetting(ReaderView.PROP_APP_BOOK_SORT_ORDER, mSortOrder.name(), false);
+			// Redraw only: showDirectory() would rescan and drop author/title loaded from the DB.
+			showDirectoryInternal(currDirectory, selectedItem);
 		}
 	}
 	public void setSortOrder(String orderName) {
@@ -577,22 +555,22 @@ public class FileBrowser extends LinearLayout implements FileInfoChangeListener 
 		int[] optionLabels = {
 			FileInfo.SortOrder.FILENAME.resourceId,	
 			FileInfo.SortOrder.FILENAME_DESC.resourceId,	
-			FileInfo.SortOrder.AUTHOR_TITLE.resourceId,	
-			FileInfo.SortOrder.AUTHOR_TITLE_DESC.resourceId,	
-			FileInfo.SortOrder.TITLE_AUTHOR.resourceId,	
+			FileInfo.SortOrder.AUTHOR_TITLE.resourceId,
+			FileInfo.SortOrder.AUTHOR_TITLE_DESC.resourceId,
+			FileInfo.SortOrder.TIMESTAMP_DESC.resourceId,
+			FileInfo.SortOrder.TIMESTAMP.resourceId,
+			FileInfo.SortOrder.TITLE_AUTHOR.resourceId,
 			FileInfo.SortOrder.TITLE_AUTHOR_DESC.resourceId,
-			FileInfo.SortOrder.TIMESTAMP.resourceId,	
-			FileInfo.SortOrder.TIMESTAMP_DESC.resourceId,	
 		};
 		String[] optionValues = {
 			FileInfo.SortOrder.FILENAME.name(),	
 			FileInfo.SortOrder.FILENAME_DESC.name(),	
 			FileInfo.SortOrder.AUTHOR_TITLE.name(),	
 			FileInfo.SortOrder.AUTHOR_TITLE_DESC.name(),
-			FileInfo.SortOrder.TITLE_AUTHOR.name(),	
-			FileInfo.SortOrder.TITLE_AUTHOR_DESC.name(),	
-			FileInfo.SortOrder.TIMESTAMP.name(),	
-			FileInfo.SortOrder.TIMESTAMP_DESC.name(),	
+			FileInfo.SortOrder.TIMESTAMP_DESC.name(),
+			FileInfo.SortOrder.TIMESTAMP.name(),
+			FileInfo.SortOrder.TITLE_AUTHOR.name(),
+			FileInfo.SortOrder.TITLE_AUTHOR_DESC.name(),
 		};
 		OptionsDialog.ListOption dlg = new OptionsDialog.ListOption(
 			new OptionOwner() {
@@ -604,7 +582,7 @@ public class FileBrowser extends LinearLayout implements FileInfoChangeListener 
 			ReaderView.PROP_APP_BOOK_SORT_ORDER).add(optionValues, optionLabels); 
 		dlg.setOnChangeHandler(() -> {
 			final String newValue = properties.getProperty(ReaderView.PROP_APP_BOOK_SORT_ORDER);
-			if ( newValue!=null && oldValue!=null && !newValue.equals(oldValue) ) {
+			if ( newValue!=null && !newValue.equals(oldValue) ) {
 				log.d("New sort order: " + newValue);
 				setSortOrder(newValue);
 			}

@@ -2,16 +2,18 @@ apply plugin: 'com.android.application'
 
 android {
     namespace 'org.coolreader'
-    compileSdkVersion 35
-    buildToolsVersion "35.0.0"
+    compileSdk 36
+    buildToolsVersion "36.0.0"
+    ndkVersion "30.0.15729638"
     defaultConfig {
         applicationId "org.coolreader"
-        minSdkVersion 4
-        targetSdkVersion 35
+        // NDK r28+ cannot target anything older than API 21.
+        minSdk 21
+        targetSdk 36
         // When new version released, version code must be incremented at least by 8
         // for compatibility with ABI versioning of split apk (see below).
-        versionCode 32570
-        versionName "3.2.59-1"
+        versionCode 32578
+        versionName "3.2.59-2"
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
         externalNativeBuild {
             cmake {
@@ -28,8 +30,34 @@ android {
             res.srcDirs = ['../../android/res']
         }
     }
+    // Release signing: keystore path and alias come from ~/.gradle/gradle.properties, the
+    // password from the macOS Keychain item "7ui-signing", so neither lands in the repo.
+    // Without them the release build is simply left unsigned.
+    def keystorePath = findProperty('SEVENUI_KEYSTORE')
+    def keyAliasProp = findProperty('SEVENUI_KEY_ALIAS')
+    def keychainPassword = {
+        try {
+            def p = ['security', 'find-generic-password', '-s', '7ui-signing', '-w'].execute()
+            def out = p.text.trim()
+            p.waitFor() == 0 ? out : null
+        } catch (Exception ignored) { null }
+    }
+    signingConfigs {
+        release {
+            if (keystorePath && keyAliasProp) {
+                def pw = keychainPassword()
+                if (pw) {
+                    storeFile file(keystorePath)
+                    storePassword pw
+                    keyAlias keyAliasProp
+                    keyPassword pw
+                }
+            }
+        }
+    }
     buildTypes {
         release {
+            if (signingConfigs.release.storeFile) signingConfig signingConfigs.release
             // to make the bug report more readable.
             minifyEnabled false
             shrinkResources false
@@ -40,8 +68,8 @@ android {
                     arguments "-DCMAKE_BUILD_TYPE=RelWithDebInfo"
                 }
             }
-            packagingOptions{
-                doNotStrip "**/*.so"
+            packaging {
+                jniLibs.keepDebugSymbols += "**/*.so"
             }
         }
         release_stripped {
@@ -64,8 +92,8 @@ android {
                     arguments "-DCMAKE_BUILD_TYPE=Debug"
                 }
             }
-            packagingOptions{
-                doNotStrip "**/*.so"
+            packaging {
+                jniLibs.keepDebugSymbols += "**/*.so"
             }
         }
     }
@@ -83,34 +111,13 @@ android {
             universalApk true //generate an additional APK that contains all the ABIs
         }
     }
-     // map for the version code
-    project.ext.abiCodes = [
-            'armeabi': 1,
-            'armeabi-v7a': 2,
-            'arm64-v8a': 6,
-            'mips': 3,
-            'mips64': 7,
-            'x86': 4,
-            'x86_64': 5
-    ]
-    android.applicationVariants.all { variant ->
-        variant.outputs.each { output ->
-            // Stores the value of ext.abiCodes that is associated with the ABI for this variant.
-            def baseAbiVersionCode = project.ext.abiCodes.get(output.getFilter(com.android.build.OutputFile.ABI))
-            if (baseAbiVersionCode != null) {
-                // Variant 1: small version code increment for various ABI (old behaviour)
-                output.versionCodeOverride = variant.versionCode + baseAbiVersionCode
-                // Variant 2: big version code increment for various ABI
-                //output.versionCodeOverride = variant.versionCode + 1000000*baseAbiVersionCode
-            }
-        }
-    }
     externalNativeBuild {
         cmake {
             path "CMakeLists.txt"
+            version "3.31.6"
         }
     }
-    lintOptions {
+    lint {
         disable 'MissingTranslation'
         checkReleaseBuilds false
         // Or, if you prefer, you can continue to check for errors in release builds,
@@ -127,14 +134,39 @@ android {
         aidl true
     }
 
-    packagingOptions {
+    packaging {
         jniLibs {
             useLegacyPackaging true
         }
     }
 }
 
-task prepareKotlinBuildScriptModel {}
+// Per-ABI split APKs get versionCode + small offset (old behaviour), so each ABI build
+// supersedes the universal one on update.
+def abiCodes = [
+        'armeabi': 1,
+        'armeabi-v7a': 2,
+        'arm64-v8a': 6,
+        'mips': 3,
+        'mips64': 7,
+        'x86': 4,
+        'x86_64': 5
+]
+androidComponents {
+    onVariants(selector().all()) { variant ->
+        variant.outputs.each { output ->
+            def abi = output.filters.find {
+                it.filterType == com.android.build.api.variant.FilterConfiguration.FilterType.ABI
+            }?.identifier
+            def offset = abiCodes.get(abi)
+            if (offset != null) {
+                output.versionCode.set(output.versionCode.get() + offset)
+            }
+        }
+    }
+}
+
+tasks.register('prepareKotlinBuildScriptModel')
 
 dependencies {
     implementation fileTree(include: ['*.jar'], dir: 'libs')

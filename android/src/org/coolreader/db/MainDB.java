@@ -1666,8 +1666,9 @@ public class MainDB extends BaseDB {
 		fileInfo.format = DocumentFormat.byId(rs.getInt(i++));
 		fileInfo.size = rs.getLong(i++);
 		fileInfo.arcsize = rs.getLong(i++);
-		fileInfo.createTime = rs.getInt(i++);
-		fileInfo.lastAccessTime = rs.getInt(i++);
+		// Millisecond timestamps: getInt() would truncate them to garbage.
+		fileInfo.createTime = rs.getLong(i++);
+		fileInfo.lastAccessTime = rs.getLong(i++);
 		fileInfo.flags = rs.getInt(i++);
 		fileInfo.language = rs.getString(i++);
 		fileInfo.description = rs.getString(i++);

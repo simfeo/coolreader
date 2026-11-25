@@ -28,8 +28,8 @@
     <string name="mi_book_sort_order">Sorting order</string>
     <string name="mi_book_sort_order_filename">By filename</string>
     <string name="mi_book_sort_order_filename_desc">By filename (desc)</string>
-    <string name="mi_book_sort_order_timestamp">By timestamp</string>
-    <string name="mi_book_sort_order_timestamp_desc">By timestamp (desc)</string>
+    <string name="mi_book_sort_order_timestamp">By date (oldest first)</string>
+    <string name="mi_book_sort_order_timestamp_desc">By date (newest first)</string>
     <string name="mi_book_sort_order_author">By author</string>
     <string name="mi_book_sort_order_author_desc">By author (desc)</string>
     <string name="mi_book_sort_order_title">By title</string>
