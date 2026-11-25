@@ -191,6 +191,8 @@
         <item name="cr3_button_dec_drawable">@drawable/cr3_button_dec_dark</item>
     </style>
     <style name="Theme.White" parent="@android:style/Theme.Material.Light">
+        <item name="android:windowActionBar">false</item>
+        <item name="android:windowNoTitle">true</item>
         <item name="android:windowBackground">@android:color/white</item>
         <item name="android:colorBackground">@android:color/white</item>
         <!-- item name="android:textColor">@android:color/black</item-->
@@ -306,6 +308,8 @@
         <item name="media_flash_microsd_drawable">@drawable/media_flash_sd_mmc</item>
     </style>
     <style name="Theme.Black" parent="@android:style/Theme.Material">
+        <item name="android:windowActionBar">false</item>
+        <item name="android:windowNoTitle">true</item>
         <item name="android:windowBackground">@android:color/black</item>
         <item name="android:colorBackground">@android:color/black</item>
         <!-- item name="android:textColor">@android:color/white</item-->
@@ -447,6 +451,8 @@
         <item name="tts_toolbar_background">#D0808080</item>
     </style>
     <style name="Theme.HiContrast1" parent="@android:style/Theme.Material.Light">
+        <item name="android:windowActionBar">false</item>
+        <item name="android:windowNoTitle">true</item>
         <item name="android:windowBackground">@android:color/white</item>
         <item name="android:colorBackground">@android:color/white</item>
         <!-- item name="android:textColor">@android:color/black</item -->
@@ -562,6 +568,8 @@
         <item name="media_flash_microsd_drawable">@drawable/media_flash_microsd</item>
     </style>
     <style name="Theme.HiContrast2" parent="@android:style/Theme.Material">
+        <item name="android:windowActionBar">false</item>
+        <item name="android:windowNoTitle">true</item>
         <item name="android:windowBackground">@android:color/black</item>
         <item name="android:colorBackground">@android:color/black</item>
         <!-- item name="android:textColor">@android:color/white</item-->

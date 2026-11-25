@@ -103,6 +103,7 @@ public class BaseDialog extends Dialog {
 			//lp.memoryType = WindowManager.LayoutParams.MEMORY_TYPE_PUSH_BUFFERS;
 			getWindow().setAttributes(lp);
 		}
+		Utils.applySystemBarInsets(getWindow());
 		Log.i("cr3", "BaseDialog.window=" + getWindow());
         setCancelable(true);
         setOnDismissListener(dialog -> onClose());

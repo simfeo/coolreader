@@ -67,6 +67,7 @@ public class NoticeDialog extends Dialog {
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.notice_dialog);
+		Utils.applySystemBarInsets(getWindow());
 		Button button1 = findViewById(R.id.notice_dlg_btn_positive);
 		button1.setText(mButton1Text);
 		button1.setOnClickListener(v -> {

@@ -67,6 +67,8 @@
     </style>
 
     <style name="Theme.White" parent="@android:style/Theme.Material.Light">
+        <item name="android:windowActionBar">false</item>
+        <item name="android:windowNoTitle">true</item>
         <item name="android:windowBackground">@android:color/white</item>
         <item name="android:colorBackground">@android:color/white</item>
         <!-- item name="android:textColor">@android:color/black</item-->
@@ -184,6 +186,8 @@
     </style>
 
     <style name="Theme.Black" parent="@android:style/Theme.Material">
+        <item name="android:windowActionBar">false</item>
+        <item name="android:windowNoTitle">true</item>
         <item name="android:windowBackground">@android:color/black</item>
         <item name="android:colorBackground">@android:color/black</item>
         <!-- item name="android:textColor">@android:color/white</item-->
@@ -301,6 +305,8 @@
     </style>
 
     <style name="Theme.HiContrast1" parent="@android:style/Theme.Material.Light">
+        <item name="android:windowActionBar">false</item>
+        <item name="android:windowNoTitle">true</item>
         <item name="android:windowBackground">@android:color/white</item>
         <item name="android:colorBackground">@android:color/white</item>
         <!-- item name="android:textColor">@android:color/black</item -->
@@ -418,6 +424,8 @@
     </style>
 
     <style name="Theme.HiContrast2" parent="@android:style/Theme.Material">
+        <item name="android:windowActionBar">false</item>
+        <item name="android:windowNoTitle">true</item>
         <item name="android:windowBackground">@android:color/black</item>
         <item name="android:colorBackground">@android:color/black</item>
         <!-- item name="android:textColor">@android:color/white</item-->

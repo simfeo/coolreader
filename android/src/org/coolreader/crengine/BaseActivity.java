@@ -203,6 +203,7 @@ public class BaseActivity extends Activity implements Settings {
 		mDecorView = getWindow().getDecorView();
 
 		super.onCreate(savedInstanceState);
+		Utils.applySystemBarInsets(getWindow());
 
 		mDictionaries = new Dictionaries(this);
 

@@ -890,4 +890,43 @@ public class Utils {
 		return n;
 	}
 
+	/**
+	 * Android 15+ forces edge-to-edge for targetSdk >= 35 and ignores the opt-out at 36.
+	 * Pad the window content by the visible system bars and cutout, painted black like the
+	 * opaque bars of older Android. Hidden bars (fullscreen reading) report zero insets.
+	 */
+	public static void applySystemBarInsets(android.view.Window window) {
+		if (Build.VERSION.SDK_INT < 35)
+			return;
+		View content = window.getDecorView().findViewById(android.R.id.content);
+		if (content == null)
+			return;
+		// Paint only the padding strips, so the window background still shows behind the content.
+		final Paint barPaint = new Paint();
+		barPaint.setColor(Color.BLACK);
+		content.setForeground(new Drawable() {
+			@Override
+			public void draw(Canvas canvas) {
+				int w = content.getWidth(), h = content.getHeight();
+				int l = content.getPaddingLeft(), t = content.getPaddingTop();
+				int r = content.getPaddingRight(), b = content.getPaddingBottom();
+				if (t > 0) canvas.drawRect(0, 0, w, t, barPaint);
+				if (b > 0) canvas.drawRect(0, h - b, w, h, barPaint);
+				if (l > 0) canvas.drawRect(0, 0, l, h, barPaint);
+				if (r > 0) canvas.drawRect(w - r, 0, w, h, barPaint);
+			}
+			@Override public void setAlpha(int alpha) {}
+			@Override public void setColorFilter(android.graphics.ColorFilter cf) {}
+			@Override public int getOpacity() { return android.graphics.PixelFormat.TRANSLUCENT; }
+		});
+		content.setOnApplyWindowInsetsListener((v, insets) -> {
+			android.graphics.Insets i = insets.getInsets(
+					android.view.WindowInsets.Type.systemBars() | android.view.WindowInsets.Type.displayCutout());
+			v.setPadding(i.left, i.top, i.right, i.bottom);
+			v.invalidate();
+			return insets;
+		});
+		content.requestApplyInsets();
+	}
+
 }
